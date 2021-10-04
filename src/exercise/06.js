@@ -9,7 +9,15 @@ import {
   PokemonForm
 } from '../pokemon'
 
+const states = {
+  idle: 'idle',
+  pending: 'pending',
+  resolved: 'resolved',
+  rejected: 'rejected',
+};
+
 function PokemonInfo({pokemonName}) {
+  const [status, setStatus] = React.useState(states.idle);
   const [pokemon, setPokemon] = React.useState(null);
   const [error, setError] = React.useState(null);
 
@@ -17,31 +25,42 @@ function PokemonInfo({pokemonName}) {
     if (!pokemonName || '' === pokemonName) {
       return;
     }
-    setError(null);
-    setPokemon(null);
+    setStatus(states.pending);
     fetchPokemon(pokemonName)
       .then(
         pokemonData => {
           setPokemon(pokemonData);
+          setStatus(states.resolved);
         },
       )
       .catch(
         error => {
           setError(error);
+          setStatus(states.rejected);
         },
       )
   }, [pokemonName]);
 
-  if (error) {
-    return <div role="alert">
-      There was an error: <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
-    </div>;
-  } else if (!pokemonName || '' === pokemonName) {
-    return 'Submit a pokemon';
-  } else if (!pokemon) {
-    return <PokemonInfoFallback name={pokemonName} />;
-  } else {
-    return <PokemonDataView pokemon={pokemon} />;
+  switch (status) {
+    case states.idle: {
+      return 'Submit a pokemon';
+    }
+    case states.pending: {
+      return <PokemonInfoFallback name={pokemonName} />
+    }
+    case states.resolved: {
+      return <PokemonDataView pokemon={pokemon} />;
+    }
+    case states.rejected: {
+      return (
+        <div role="alert">
+          There was an error: <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+        </div>
+      );
+    }
+    default: {
+      return 'Submit a pokemon';
+    }
   }
 }
 
